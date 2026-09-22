@@ -26,7 +26,7 @@ Identificar diferencias en el perfil de expresión génica entre pacientes con C
 1. Abrir `Analisis_expresion_diferencial.Rproj` en RStudio.
 2. Renderizar `Informe_Analisis_Expresion_Diferencial.qmd` con Quarto (`quarto render` o el botón *Render*).
 
-El informe ya renderizado está disponible en `Informe_Analisis_Expresion_Diferencial.pdf`. El apéndice del informe incluye el código completo de R fuera de los bloques ejecutados en el cuerpo del documento.
+El informe ya renderizado está disponible en `Informe_Analisis_Expresion_Diferencial.pdf`. 
 
 ## Contenido de la carpeta
 
@@ -35,7 +35,6 @@ Informe_Analisis_Expresion_Diferencial.qmd   # Informe (código + texto)
 Informe_Analisis_Expresion_Diferencial.pdf   # Informe renderizado
 Datos/                                       # Matriz de recuentos y metadatos (GEO)
 Resultados/                                  # Figuras exportadas (heatmap, MDS, PCA, volcanoplots)
-references.bib                               # Referencias bibliográficas (no vinculadas al YAML; ver nota abajo)
+# Referencias bibliográficas (no vinculadas al YAML)
 ```
 
-> **Nota:** `references.bib` no está actualmente enlazado en el YAML del informe ni citado con sintaxis `[@cita]` — las referencias del informe están escritas a mano en la sección "Referencias". Se conserva el archivo por si se decide migrar a citas automáticas de Quarto en el futuro.
