@@ -1,8 +1,8 @@
 # Portfolio de análisis de datos ómicos
 
-Colección de análisis estadísticos aplicados a datos ómicos públicos, desarrollados en R con [Quarto](https://quarto.org/) y presentados en formato de artículo científico. El objetivo de este repositorio es demostrar competencia en el ciclo completo de un análisis ómico: desde la obtención e importación de datos públicos hasta el análisis exploratorio, el análisis multivariante y, en el segundo caso, la identificación de expresión diferencial.
+Colección de análisis estadísticos aplicados a datos ómicos públicos, desarrollados en R con [Quarto](https://quarto.org/) y presentados en formato de artículo científico. El objetivo de este repositorio es desarrollar el pipeline de un análisis ómico: desde la obtención e importación de datos públicos hasta el análisis exploratorio, el análisis multivariante y, en el segundo caso, la identificación de expresión diferencial.
 
-Los dos análisis parten de datasets y preguntas biológicas distintas, pero comparten metodología (uso de `SummarizedExperiment` de Bioconductor, análisis exploratorio multivariante) y se agrupan aquí como parte del mismo portfolio.
+Los dos análisis parten de datasets y preguntas biológicas distintas, pero comparten metodología (uso de `SummarizedExperiment` de Bioconductor, análisis exploratorio multivariante).
 
 ## Análisis incluidos
 
