@@ -9,6 +9,7 @@ Explorar si existen patrones diferenciados en la expresión de metabolitos entre
 ## Datos
 
 - **Fuente:** [Metabolomics Workbench](https://www.metabolomicsworkbench.org/), estudio **ST003805**.
+- **Estudio original:** Huang, Wei-Chao, Kira Perzel Mandell, Sameer Aryal, et al. 2025. *Epigenetic Changes, Neuronal Dysregulation and Metabolomic Abnormalities in Zmym2 Mutant Mice, a Genetic Model of Schizophrenia and Neurodevelopmental Disorders*. bioRxiv. [https://doi.org/10.1101/2025.02.18.638656](https://doi.org/10.1101/2025.02.18.638656) 
 - **Dataset utilizado:** resultado del análisis por espectrometría de masas de la cromatografía líquida de interacción hidrofílica en modo de ion positivo (HILIC positive ion mode), `ST003805_AN006254_Results.txt`, junto con sus metadatos (`coldata.txt`, `rowdata.txt`, `metadata.txt`).
 - `data_pim.txt` y `data_untpim.txt` corresponden a otros datasets del mismo estudio combinado (otras cromatografías) que no se usan en el análisis final, conservados por trazabilidad de la descarga original.
 
