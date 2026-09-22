@@ -1,0 +1,415 @@
+---
+title: "Análisis de Expresión Diferencial en la Respuesta a SARS-CoV-2 mediante RNA-seq"
+subtitle: "Datos de GSE161731 (GEO) — McClain et al., 2021"
+author: "Joaquín Villegas"
+lang: es
+format:
+  pdf:
+    toc: true
+    toc-depth: 4
+    toc-title: "Tabla de contenidos"
+    number-sections: true
+    highlight: textmate
+    colorlinks: true
+    geometry: margin=2.5cm
+    fontsize: 11pt
+execute:
+  include: false
+  warning: false
+  message: false
+  cache: true
+  tidy: true
+  eval: true
+editor: visual
+---
+
+```{r}
+if (!require(Rsubread)) BiocManager::install("Rsubread")
+if (!require(edgeR))BiocManager::install("edgeR")
+if (!require(limma))BiocManager::install("limma")
+if (!require(pheatmap))BiocManager::install("pheatmap")
+if (!require(org.Mm.eg.db))BiocManager::install("org.Mm.db")
+if (!require(clusterProfiler))BiocManager::install("clusterProfiler")
+if (!require(factoextra)) install.packages("factoextra", dep=TRUE)
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+if (!require(org.Hs.eg.db))BiocManager::install("org.Hs.eg.db")
+library(AnnotationDbi)
+BiocManager::install("EnsDb.Hsapiens.v86")
+```
+
+```{r}
+workingDir<-getwd()
+dataDir<-file.path(workingDir, "Datos")
+resultadosDir<-file.path(workingDir, "Resultados")
+```
+
+## Abstract
+
+La infección de SARS-COV-2 se ha manifestado y desencadenado diferentes respuestas inmunes. En este estudio se pretende dilucidar nuevos aspectos de la respuesta génica frente a SARS-COV-2 mediante análisis de RNA-seq de muestras de sangre periférica de pacientes con COVID_19, neumonía bacteriana y sanos. Con este propósito se observaron similitudes en la varianza de los datos debidas al cohorte y a la raza de los individuos del estudio. Por ello se realizaron comparaciones entre la respuesta de diferentes razas al COVID_19 y a neumonía bacteriana y la respuesta del COVID_19 frente a personas sanas y con neumonía bacteriana. Como resultado los perfiles de expresión mostraron que ciertos genes tienden a subexpresarse en personas afroamericanas en la respuesta frente al COVID_19 y que la respuesta causada por el COVID_19 tiende a la subexpresión de genes y la causada por neumonía bacteriana tiende a la sobreexpresión de genes. Esta tendencia probablemente es debida a la fuerte respuesta inflamatoria de una infección bacteriana y la tendencia a la subexpresión coincide con una respuesta vírica debido al uso de la maquinaria celular para el ensamblaje y replicación de virus.
+
+## Objetivos
+
+Este estudio tiene como objetivo realizar un análisis de expresión génica diferencial a partir de datos de RNA-seq, con el fin de obtener respuestas del perfil transcriptómico de la respuesta a diferentes infecciones. Para ello se utilizó la matriz de recuento obtenida de la secuenciación de ARN de muestras de sangre periférica de sujetos con COVID_19, comparándolos con sujetos con coronavirus estacional, gripe, neumonía bacteriana y controles sanos del estudio (McClain et al., 2021) donde se analizó la respuesta del huésped a la infección por SARS-COV-2
+
+## Métodos
+
+### Importación de datos y creación del SummarizedExperiment
+
+La matriz de recuento se obtuvo de la base de datos Gene Expression Omnibus (GEO) bajo el identificador GSE161731 encontrada en el archivo "GSE161731_counts.csv". Junto a la matriz se descargaron los metadatos y se prepararon (obtención de muestras en común y en el mismo orden) para crear un objeto SummarizedExperiment. En vez de añadir 'rowdata' se creó un objeto rowRange que contiene las coordenadas de los genes y sus identificadores (Morgan et al., 2025), usando el paquete "EnsDb.Hsapiens.v86" para genes con identificadores de ENSEMBL (ENSGxxxx...).
+
+```{r}
+counts<-read.csv(file=file.path(dataDir, "GSE161731_counts.csv"), header = TRUE, row.names = 1,  check.names = FALSE)
+colData<-read.csv(file=file.path(dataDir,"GSE161731_counts_key.csv"), header = TRUE, row.names = 1)
+metadata<-read.table(file=file.path(dataDir,"GSE161731_metadata.txt"), header = FALSE, sep = "\t", quote="", fill=TRUE)
+setdiff(colnames(counts), rownames(colData))
+counts1<- counts[, 1:(ncol(counts)-3)]
+all(colnames(counts1) == rownames(colData))
+library(EnsDb.Hsapiens.v86)
+rowranges <- genes(EnsDb.Hsapiens.v86, filter = GeneIdFilter(rownames(counts1)))
+length(setdiff(rownames(counts1), names(rowranges)))
+countsconid<-counts1[rownames(counts1) %in% names(rowranges),]
+rowranges_ordenados <- rowranges[rownames(countsconid)]
+all(rownames(countsconid) == names(rowranges_ordenados))
+```
+
+```{r}
+library(SummarizedExperiment)
+sumex<-SummarizedExperiment(assays=list(count = as.matrix(countsconid)), colData = colData, metadata = metadata,  rowRanges = rowranges_ordenados)
+sumex
+```
+
+Tras la creación del SummarizedExperiment se limpiaron los metadatos (se utilizaron guiones bajos como separadores para los nombres de las variables y se convertieron en factor, excepto la variable "edad" que se transformó a numérica) y se seleccionaron las muestras con las que íbamos a trabajar (aquellas correspondientes a los cohortes de los niveles "COVID_19", "Bacterial" y "healthy").
+
+```{r}
+library(stringr)
+colData(sumex)$race<-str_replace_all(colData(sumex)$race, "[ /]", "_")
+colData(sumex)$cohort<-str_replace_all(colData(sumex)$cohort, "[- ]", "_")
+x<-head(colData(sumex),10)
+colData(sumex)$age<- as.numeric(colData(sumex)$age)
+colData(sumex)$gender<-as.factor(colData(sumex)$gender)
+colData(sumex)$race<-as.factor(colData(sumex)$race)
+colData(sumex)$cohort<-as.factor(colData(sumex)$cohort)
+colData(sumex)$time_since_onset<-as.factor(colData(sumex)$time_since_onset)
+colData(sumex)$hospitalized<-as.factor(colData(sumex)$hospitalized)
+colData(sumex)$batch<-as.factor(colData(sumex)$batch)
+str(colData(sumex))
+sumex_cohortes <- subset(sumex, select = cohort %in% c("COVID_19","Bacterial","healthy"))
+colData(sumex_cohortes)$cohort<-droplevels(colData(sumex_cohortes)$cohort)
+datossumex_coh<-assay(sumex_cohortes)
+sumex_coh_nodup<- sumex_cohortes[!duplicated(datossumex_coh)]
+```
+
+Una vez seleccionados se eliminaron observaciones duplicadas y se seleccionaron 75 muestras al azar utilizando una semilla para asegurar la reproducibilidad de los datos.
+
+```{r}
+#| include: true
+#| echo: true
+myseed <- sum(utf8ToInt("joaquinmartinezvillegas"))
+set.seed(myseed)
+seleccion<-sample(colnames(sumex_coh_nodup), 75)
+sumex_coh_nodup_75<-sumex_coh_nodup[,seleccion]
+```
+
+### Preprocesado de los datos
+
+Con esta matriz de 75 muestras, antes de filtrar los datos se procedió a normalizar los contajes para las diferentes profundidades de secuenciación y así evitar sesgos debidos al tamaño de la librería. Expresamos los contajes en "counts per million" mediante la función cpm del paquete "edgeR" y eliminamos aquellos que se expresen a un CPM inferior a 0,5 en al menos 5 muestras. Consideramos que los genes con contajes por millón menores a 0.5 en más de 70 muestras de 75 con las que trabajamos correspondían con ausencia de expresión.
+
+```{r}
+#| include: true
+#| echo: true
+library(edgeR)
+datos_75<-assay(sumex_coh_nodup_75)
+counts.cpm<-cpm(datos_75)
+umbral<-counts.cpm>0.5
+filtro<-rowSums(umbral)>=5
+datos_75_filtrado<-datos_75[filtro,]
+```
+
+### Exploración de los datos
+
+Descartados los genes poco expresados aplicamos logaritmos para examinar las distribuciones de los recuentos sin procesar. Puesto que trabajamos con demasiadas muestras para hacer un boxplot utilizamos un gráfico de densidades (@fig-densidades-crudos-1). Para aplicar logaritmos usamos la función cpm para obtener recuentos log2 por millón. Usar cpm para aplicar logaritmos tiene dos ventajas, la primera comentada anteriormente, corrigiendo los recuentos dado el tamaño de las bibliotecas, y la segunda evita tomar log de cero.
+
+Aplicamos la normalización TMM a un objeto de la clase DGEList para poder normalizar los datos (@fig-densidades-crudos-2), si no generamos este objeto el resultado es un vector con los factores de normalización y no nos permite graficar los recuentos normalizados. Esta normalización elimina los sesgos generados por las composiciones de las diferentes librerías mediante la creación de factores de normalización mediante "calcNormFactors".
+
+```{r}
+logcounts<-cpm(datos_75_filtrado, log = TRUE)
+dgeobj<-DGEList(datos_75_filtrado)
+datos_75_filtrado_norm<-calcNormFactors(dgeobj)
+logcounts_norm<-cpm(datos_75_filtrado_norm, log = TRUE)
+library(reshape2)
+library(ggplot2)
+plotdatos1<-melt(logcounts_norm)
+plotdatos<-melt(logcounts)
+```
+
+Una vez normalizados los datos queremos comprobar si hay similaridades entre las muestras. Calculamos las distancias euclídeas para realizar un heatmap y mostrar gráficamente la existencia de grupos bien marcados y posibles outliers (@fig-Heatmap) y aplicamos técnicas que reducen la dimensionalidad de los datos como el escalamiento multidimensional que también utiliza distancias euclídeas (matrices de similitudes/disimilitudes) para generar un gráfico de menor dimensión y otorgar coordenadas de los puntos de tal forma que representen la distancia entre ellos (@fig-MDS). Aplicamos también el análisis de componentes principales, que nos permite discernir si existe algún patrón oculto y saber qué variables son las principales causantes de la variabilidad de los datos (@fig-Análisis_Componentes_Principales-1, @fig-Análisis_Componentes_Principales-2).
+
+### Análisis de expresión diferencial con limma-voom
+
+```{r}
+#| include: true
+#| echo: true
+set.seed(myseed)
+sample(c("edgeR", "voom+limma", "DESeq2"), size = 1)
+```
+
+Normalizados los datos y finalizado el análisis exploratorio comprobando la calidad de los datos y detectando las variables confusoras procedemos a la selección de genes diferencialmente expresados.
+
+Los datos de RNA-seq tienden a presentar sobredispersión por lo que la relación entre la media y la varianza depende de la media y no es lineal (cuanto más alta la media, más varianza tienen los datos). Para poder analizarlos con limma-voom los datos sufren una transformación que los hace continuos con la función voom permitiendo aplicar un modelo lineal a los datos transformados y así realizar el análisis de expresión diferencial con el paquete limma.
+
+En primera instancia creamos la matriz de diseño con las variables confusoras y realizamos la matriz de contrastes realizando las comparaciones de los grupos que nos interesan. Realizado esto se creó un objeto de la clase voom para llevar a cabo el ajuste de los datos a un modelo lineal.
+
+```{r}
+#| include: true
+#| echo: true
+#| eval: false
+voomObj<-voom(datos_sin_outliers_norm, design)
+fit<-lmFit(voomObj)
+fit.contraste<-contrasts.fit(fit, matrizcontraste)
+fit.contraste<-eBayes(fit.contraste)
+```
+
+Para definir correctamente qué variable era la que generaba la variabilidad en los datos se realizaron siete comparaciones: las dos primeras para estudiar cómo difiere el perfil de expresión según la raza al enfrentar tanto la neumonía bacteriana como el covid, para ello se compararon personas con la misma enfermedad y distinta raza, dos comparaciones se realizaron para estudiar la diferencia entre el perfil de expresión en una persona con covid/neumonía y personas sanas, y otras dos comparaciones se realizaron para estudiar diferencias en el perfil de expresión en una persona con neumonía bacteriana y el COVID_19.
+
+```{r}
+#| include: true
+#| echo: true
+#| eval: false
+matrizcontraste<-
+  makeContrasts(BlackBac.vs.WhiteBac = Black_African_American.Bacterial - White.Bacterial,
+                BlackCov.vs.WhiteCov = Black_African_American.COVID_19 - White.COVID_19,
+                WhiteCov.vs.Whiteheal = White.COVID_19 - White.healthy,
+                AsianCov.vs.Asianheal = Asian.COVID_19 - Asian.healthy,
+                BlackBac.vs.BlackCov = Black_African_American.Bacterial - Black_African_American.COVID_19,
+                WhiteBac.vs.WhiteCov = White.Bacterial - White.COVID_19, levels=design)
+```
+
+Dado que el análisis implica pruebas de hipótesis múltiples, los p-valores se ajustaron mediante el método de Benjamini-Hochberg estableciendo un umbral de log2FC de 1.5 para considerar expresión diferencial y un p-valor de 0.05. Con el objetivo de visualizar mejor los resultados se realizaron gráficos de volcán (@fig-volcanoplots) y comparaciones múltiples (@fig-Venn).
+
+### Análisis de significación biológica
+
+Con el fin de darle significancia biológica a los perfiles de expresión génica diferencialmente expresados realizamos un análisis de sobrerrepresentación para identificar aquellos genes que están sobreexpresados en pacientes con COVID19 en comparación con los sanos. Para el análisis usé la función enrichgo del paquete clusterProfiler. Puesto que la mayoría de genes se subexpresan me concentré en aquellos genes que tuvieran un logFC\<-1,5 (se expresa menos de la mitad de veces que en una persona sana).
+
+## Resultados
+
+### Preprocesado y normalización de los datos
+
+En la @fig-densidades-crudos-1 observamos que la distribución de densidad de las intensidades logarítmicas brutas no se superponen de manera perfecta y observamos dos picos en los que las intensidades están más dispersas, a intensidades bajas (logCPM\<0) y altas (logCPM\>5).
+
+Mientras que en la @fig-densidades-crudos-2 se puede ver cierta mejora en la superposición de las densidades observando cómo los dos picos se han suavizado, permitiendo una comparación mejor de los datos. Aunque se esclarece como la distribución de las intensidades logarítmicas normalizadas de dos muestras no se superponen observando su pico entre el intervalo de intensidades logCPM 0-2,5.
+
+```{r}
+#| label: fig-densidades-crudos
+#| fig-cap: "Distribuciones de logCPM"
+#| include: true
+#| echo: false
+#| layout-ncol: 2
+ggplot(plotdatos, aes(value, group = Var2)) + geom_density(alpha=0.05) + labs(x="logCPM", y="Densidad", title = "Distribuciones de logCPM (Datos crudos)")
+ggplot(plotdatos1, aes(value, group = Var2)) + geom_density(alpha=0.05) + labs(x="logCPM", y="Densidad", title = "Distribuciones de logCPM (Datos normalizados)")
+```
+
+### Heatmap
+
+```{r}
+#| label: fig-Heatmap
+#| fig-cap: "Heatmap de las 75 muestras"
+#| fig-pos: 'H'
+#| include: true
+#| echo: false
+#| fig-width: 3
+#| fig-height: 2
+distancias<-dist(t(logcounts_norm))
+library(factoextra)
+fviz_dist((distancias), lab_size = 4)
+```
+
+Observamos que hay grupos bien definidos, sin embargo, las líneas moradas que cruzan todo el gráfico representan muestras que no son cercanas a ninguna otra muestra. Las muestras que forman estas líneas son potenciales outliers. Los análisis de MDS y PCA darán más información sobre la presencia de outliers.
+
+```{r}
+col.cohort<-c("blue", "green", "red")[colData(sumex_coh_nodup_75)$cohort]
+head(data.frame(colData(sumex_coh_nodup_75)$cohort, col.cohort),10)
+col.race<-c("blue", "orange", "green", "red", "yellow", "darkgreen", "black")[colData(sumex_coh_nodup_75)$race]
+head(data.frame(colData(sumex_coh_nodup_75)$race, col.race),10)
+```
+
+### Escalado Multidimensional (MDS)
+
+```{r}
+#| label: fig-MDS
+#| fig-cap: "MDS_cohorts"
+#| include: true
+#| echo: false
+#| fig-pos: 'H'
+#| fig-width: 3
+#| fig-height: 3
+limma::plotMDS(logcounts_norm,col=col.cohort, main="Cohort", cex=0.5)
+```
+
+En este gráfico se pueden apreciar dos cosas. La existencia de tres grupos separados de forma natural por el cohorte. Arriba izquierda el cohorte "Bacterial", arriba derecha el cohorte "Healthy" y justo por debajo el cohorte "COVID_19". Y aquellas muestras que se encuentran alejadas de su grupo (posibles outliers). Puesto que este análisis también utiliza distancias euclídeas observamos si el análisis de componentes principales apoya los resultados del Heatmap y MDS.
+
+### Análisis de Componentes Principales
+
+```{r}
+#| label: fig-Análisis_Componentes_Principales
+#| fig-cap: "PCA"
+#| fig-pos: 'H'
+#| include: true
+#| echo: false
+#| layout-ncol: 2
+names2plot<-substr(colnames(logcounts_norm),nchar(colnames(logcounts_norm)) - 4, nchar(colnames(logcounts_norm)))
+plotPCA<- function(X, labels=NULL, colors=NULL, dataDesc="",
+                   scale=FALSE, formapunts=NULL, myCex=0.8){
+  pcX<-prcomp(t(X), scale=FALSE)
+  loads<-round(pcX$sdev^2/sum(pcX$sdev^2)*100, 1)
+  xlab<-c(paste("PC1", loads[1], "%"))
+  ylab<-c(paste("PC2", loads[2], "%"))
+  if (is.null(colors)) colors=1
+  plot(pcX$x[,1:2], xlab=xlab, ylab=ylab, col=colors, pch=formapunts, main=dataDesc)
+  text(pcX$x[,1], pcX$x[,2], names2plot, pos=1, cex=myCex)
+}
+
+plotPCA(logcounts_norm, colors=col.cohort, myCex=0.6, title(paste("Plot of first 2 PCs_Cohorts", sep=" "), cex=0.8))
+plotPCA(logcounts_norm, colors=col.race, myCex=0.6,title(paste("Plot of first 2 PCs_Race", sep=" "), cex=0.8))
+```
+
+Se realizaron gráficos coloreando todas las variables. Como resultado se muestra el PCA separado por cohortes y el separado por razas puesto que muestran agrupaciones similares y por tanto una variable confusora. Cabe mencionar que el gráfico con las muestras coloreadas según la columna de Batch no mostraba ninguna agrupación indicando que no hay efecto de lote. A su vez, los puntos más alejados de los grupos (aunque en estos gráficos no se nota tanto el efecto grupo entre los individuos sanos y con COVID_19 debido a los nombres) sí se aprecia que se agrupan en la zona baja izquierda. Observando los puntos y comparándolos con el gráfico de MDS podemos considerar los puntos "95967", "DU18-02S0011625", "DU18-02S0011639", "DU09-02S0000151" como valores outliers y se procede a eliminarlos para la selección de genes diferencialmente expresados.
+
+```{r}
+#| include: true
+#| echo: true
+outliers <- c("95967", "DU18-02S0011625", "DU18-02S0011639", "DU09-02S0000151")
+sumex_coh_nodup_75_so<-sumex_coh_nodup_75[, !(colnames(sumex_coh_nodup_75) %in% outliers)]
+```
+
+### Genes diferencialmente expresados
+
+```{r}
+library(limma)
+outliers <- c("95967", "DU18-02S0011625", "DU18-02S0011639", "DU09-02S0000151")
+sumex_coh_nodup_75_so<-sumex_coh_nodup_75[, !(colnames(sumex_coh_nodup_75) %in% outliers)]
+datos_sin_outliers<-assay(sumex_coh_nodup_75_so)
+dgeobj1<-DGEList(datos_sin_outliers)
+datos_sin_outliers_norm<-calcNormFactors(dgeobj1)
+grupo<-paste(colData(sumex_coh_nodup_75_so)$race,colData(sumex_coh_nodup_75_so)$cohort, sep=".")
+design=model.matrix(~0+grupo)
+colnames(design)<-gsub("grupo", "", colnames(design))
+rownames(design)<-rownames(colData(sumex_coh_nodup_75_so))
+matrizcontraste<- makeContrasts(BlackBac.vs.WhiteBac = Black_African_American.Bacterial - White.Bacterial, BlackCov.vs.WhiteCov = Black_African_American.COVID_19 - White.COVID_19, WhiteCov.vs.Whiteheal = White.COVID_19 - White.healthy, AsianCov.vs.Asianheal = Asian.COVID_19 - Asian.healthy, BlackBac.vs.BlackCov = Black_African_American.Bacterial - Black_African_American.COVID_19, WhiteBac.vs.WhiteCov = White.Bacterial - White.COVID_19, Bac.vs.healthy = Black_African_American.Bacterial - White.healthy,
+                                levels=design)
+```
+
+```{r}
+voomObj<-voom(datos_sin_outliers_norm, design)
+fit<-lmFit(voomObj)
+fit.contraste<-contrasts.fit(fit, matrizcontraste)
+fit.contraste<-eBayes(fit.contraste)
+```
+
+```{r}
+toptab_BWbac<-topTable(fit.contraste, coef=1, sort.by = "p", number=nrow(fit.contraste), adjust="fdr", lfc=1.5, p.value=0.05)
+toptab_BWcov<-topTable(fit.contraste, coef=2, sort.by = "p", number=nrow(fit.contraste), adjust="fdr", lfc=1.5, p.value=0.05)
+toptab_Wcovheal<-topTable(fit.contraste, coef=3, sort.by = "p", number=nrow(fit.contraste), adjust="fdr", lfc=1.5, p.value=0.05)
+toptab_Acovheal<-topTable(fit.contraste, coef=4, sort.by = "p", number=nrow(fit.contraste), adjust="fdr", lfc=1.5, p.value=0.05)
+toptab_Bbaccov<-topTable(fit.contraste, coef=5, sort.by = "p", number=nrow(fit.contraste), adjust="fdr", lfc=1.5, p.value=0.05)
+toptab_Wbaccov<-topTable(fit.contraste, coef=6, sort.by = "p", number=nrow(fit.contraste), adjust="fdr", lfc=1.5, p.value=0.05)
+toptab_bacheal<-topTable(fit.contraste, coef=7, sort.by = "p", number=nrow(fit.contraste), adjust="fdr", lfc=1.5, p.value=0.05)
+```
+
+```{r}
+#| include: false
+listaToptabs<-list(BWbac=toptab_BWbac, BWcov=toptab_BWcov, Wcovheal=toptab_Wcovheal,
+                    Acovheal=toptab_Acovheal, Bbaccov=toptab_Bbaccov,
+                    Wbaccov=toptab_Wbaccov, bacheal=toptab_bacheal)
+for (nombre in names(listaToptabs)) {
+  write.csv(listaToptabs[[nombre]],
+            file.path(resultadosDir, paste0("topTable_", nombre, ".csv")))
+}
+saveRDS(fit.contraste, file.path(resultadosDir, "fit_contraste.rds"))
+```
+
+```{r}
+#| label: fig-volcanoplots
+#| fig-cap: "Genes diferencialmente expresados"
+#| include: true
+#| echo: false
+#| fig-pos: 'H'
+par(mar=c(2,2,2,2), mfrow=c(3,2))
+volcanoplot(fit.contraste,coef=1,highlight=5,names=fit.contraste$genes$SYMBOL, main="BW.Bacterial")
+volcanoplot(fit.contraste,coef=2,highlight=5,names=fit.contraste$genes$SYMBOL, main="BW.COVID_19")
+volcanoplot(fit.contraste,coef=3,highlight=5,names=fit.contraste$genes$SYMBOL, main="WCOVID.vs.healthy")
+volcanoplot(fit.contraste,coef=7,highlight=5,names=fit.contraste$genes$SYMBOL, main="Bacterial.vs.healthy")
+volcanoplot(fit.contraste,coef=5,highlight=5,names=fit.contraste$genes$SYMBOL, main="Bbacterial.vs.COVID")
+volcanoplot(fit.contraste,coef=6,highlight=5,names=fit.contraste$genes$SYMBOL, main="WBacterial.vs.COVID")
+```
+
+La primera comparación en el caso de la neumonía bacteriana entre la raza blanca/negra se observan dos genes, 24661 y 22822, con un p-valor bastante bajo y un log2FC un poco menos expresado (valores centrados). Mientras que la comparación del perfil de expresión de personas blancas/negras con covid, destaca un gen que se encuentra en el cuadrante superior izquierdo del volcanoplot, el 27652. Este gen muestra una gran subexpresión (logFC muy bajo, -6, casi 64 por debajo) y con un p-valor muy bajo.
+
+En la comparación de los perfiles de expresión de las personas (blancas) con COVID_19 y sanas se observa un gen que está extremadamente subregulado y con un p-valor muy bajo, 8498. También encontramos otro gen, 33358, subexpresado con un p-valor muy alto y un logFC de aproximadamente -3 (8 veces por debajo del nivel de expresión del transcrito).
+
+Finalmente, si observamos la comparación entre las personas de raza negra con neumonía bacteriana y COVID_19 se aprecian dos genes, 22343 y 10824 sobreexpresados y con un p-valor bastante bajo. Mientras que en personas blancas se sobreexpresan otros tres genes diferentes con un p-valor muchísimo más bajo: 34605, 18529, 24661.
+
+```{r}
+#| label: fig-Venn
+#| fig-cap: "Venn Diagrams"
+#| include: true
+#| echo: false
+#| fig-pos: 'H'
+#| fig-width: 3
+#| fig-height: 3
+summa.fit <- decideTests(fit.contraste, p.value = 0.05, lfc = 2)
+summary(summa.fit)[,c(3,7)]
+vc<- vennCounts(summa.fit[,c(3, 7)])
+vennDiagram(vc, include=c("up", "down"),
+    counts.col=c("red", "blue"),
+    circle.col = c("red", "blue"), cex=c(1,1,1))
+```
+
+La tabla muestra una gran cantidad de genes que se subexpresan en comparación con los que se sobreexpresan en personas con covid. En cambio, las personas con neumonía bacteriana muestran un número similar de genes que se sobreexpresan y subexpresan. En el diagrama se aprecia que tanto las personas con COVID_19 como con neumonía bacteriana tienen el mismo perfil de expresión en 227 genes en común.
+
+### Análisis de significación biológica
+
+```{r}
+toptab_Wcovheal_universe<-topTable(fit.contraste, coef=3, sort.by = "p", number=nrow(fit.contraste))
+topTabGO<-toptab_Wcovheal_universe
+allEnsembl<-rownames(topTabGO)
+selectedEnsemblDown<-rownames(subset(topTabGO, (logFC< -1.5) & (adj.P.Val < 0.05)))
+library(clusterProfiler)
+library(org.Hs.eg.db)
+ego <- enrichGO(gene = selectedEnsemblDown, universe = allEnsembl, keyType = "ENSEMBL", OrgDb = org.Hs.eg.db, ont = "BP", pAdjustMethod = "BH", qvalueCutoff = 0.05, readable = TRUE)
+sum(selectedEnsemblDown %in% keys(org.Hs.eg.db, keytype="ENSEMBL"))
+```
+
+```{r}
+#| include: true
+#| echo: false
+#| fig-width: 3.5
+#| fig-height: 3
+dotplot(ego, showCategory=12, font.size=4)
+```
+
+Como resultado se ve cómo se subexpresan sobre todo genes relacionados con la síntesis y biogénesis especialmente de ribosomas y ribonucleoproteínas.
+
+## Discusión
+
+En este estudio se realizaron dos pasos en el preprocesado de los datos cuya decisión fue arbitraria. El CPM inferior a 0,5 en al menos 5 muestras y la elección de outliers (los 4 seleccionados). La elección de estos resultados es conservadora para evitar pérdida de significancia biológica. Sin embargo el preprocesado de los datos puede realizarse de forma más estricta, filtrando los datos por un mayor número de CPM, aumentando el número de muestras que necesitan pasar el umbral o eliminando todos los outliers que no se agrupan íntegramente ni en el MDS ni en el PCA (en este caso eliminamos los más extremos).
+
+El análisis se llevó a cabo mediante el método limma+voom. Cabe mencionar que el análisis con otros métodos como son DESeq2, que usa la distribución binomial negativa, también es posible, aunque los resultados no serían exactamente iguales.
+
+En este análisis se centró en realizar contrastes para esclarecer que variable es la principal causa de la varianza de los datos. Sería interesante un estudio en profundidad de aquellos genes que han destacado en los volcanoplots (@fig-volcanoplots).
+
+Las primeras comparaciones muestran que los individuos de la raza negra muestran ciertas diferencias al reaccionar de forma diferente frente a ambas enfermedades. Mientras que las comparaciones entre las personas enfermas y las sanas muestran que la persona con COVID_19 tiende a subexpresar genes mientras que aquellos con neumonía bacteriana tienden a sobreexpresar genes, relacionados seguramente con una mayor respuesta inflamatoria debida a un agente bacteriano. Finalmente, las dos últimas comparaciones apoyan los resultados de las anteriores mostrando una sobreexpresión en ambas razas frente a una respuesta bacteriana en comparación con la respuesta al COVID_19.
+
+El análisis de enriquecimiento muestra que aquellos genes que suelen ser subexpresados son aquellos que participan principalmente en procesos anabólicos. Resultado que concuerda con la respuesta frente a una infección vírica y el secuestro de la maquinaria celular para priorizar el ensamblaje de nuevos virus.
+
+## Conclusiones
+
+Dados los resultados de este análisis, es concluyente que existe cierta variación en la respuesta frente a diversas infecciones (bacterianas y víricas) en individuos de distintas razas (blancos y afroamericanos). Además, la respuesta frente al COVID_19 es diferente de la respuesta frente a neumonía bacteriana, mostrando un perfil de sobreexpresión en esta última y uno de subexpresión en la respuesta frente a COVID_19, mostrando esta última muy pocos genes que se sobreexpresan (12). Estos genes subexpresados por el COVID_19 tienen funciones principalmente anabólicas, respuesta que coincide con el secuestro de maquinaria celular tras la infección de un virus para la replicación y ensamblaje del virus.
+
+## Referencias
+
+McClain, Micah T., Florica J. Constantine, Ricardo Henao, Yiling Liu, Ephraim L. Tsalik,Thomas W. Burke, Julie M. Steinbrink, et al. 2021. “Dysregulated Transcriptional Responses to SARS-CoV-2 in the Periphery.”Nature Communications 12 (1). https://doi.org/10.1038/s41467-021-21289-y.
+
+Morgan, Martin, Valerie Obenchain, Jim Hester, and Hervé Pagès. 2025. “SummarizedExperiment: A Container (S4 Class) for Matrix-Like Assays.” https://doi.org/10.18129/B9.bioc.SummarizedExperiment.
+
+Mireia Ferrer, Ricardo Gonzalo y Alex Sanchez. 2024. "Workflow de análisis de expresión diferencial usando RNA-seq". [https://aspteaching.github.io/Analisis_de_datos_omicos-Ejemplo_2-RNASeq](https://aspteaching.github.io/Analisis_de_datos_omicos-Ejemplo_2-RNASeq/Workflow_basico_de_RNASeq.html)

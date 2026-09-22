@@ -1,0 +1,33 @@
+# ---- Quarto / knitr / R Markdown render artifacts ----
+*_cache/
+*_files/
+/.quarto/
+*.utf8.md
+*.knit.md
+
+# ---- R ----
+.Rhistory
+.Rapp.history
+.RData
+.RDataTmp
+.Ruserdata
+.Rproj.user/
+*.Rcheck/
+*-Ex.R
+.httr-oauth
+.Renviron
+
+# ---- LaTeX / bibtex build byproducts ----
+*.log
+*.aux
+*.toc
+*.out
+*.synctex.gz
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+
+# ---- OS ----
+.DS_Store
+Thumbs.db

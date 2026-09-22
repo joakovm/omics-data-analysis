@@ -1,0 +1,124 @@
+#METABOLOMICS WORKBENCH emashin_20250314_081717 DATATRACK_ID:5722 STUDY_ID:ST003805 ANALYSIS_ID:AN006254 PROJECT_ID:PR002379
+VERSION             	1
+CREATED_ON             	March 14, 2025, 10:22 am
+#PROJECT
+PR:PROJECT_TITLE                 	Epigenetic changes, neuronal dysregulation and behavioral abnormalities in
+PR:PROJECT_TITLE                 	Zmym2+/- mutant mice, a genetic animal model of schizophrenia and
+PR:PROJECT_TITLE                 	neurodevelopmental disorders
+PR:PROJECT_SUMMARY               	Loss-of-function mutations in ZMYM2 are associated with an increased risk for
+PR:PROJECT_SUMMARY               	schizophrenia (SCZ) and neurodevelopmental disorders (NDD). ZMYM2 interacts with
+PR:PROJECT_SUMMARY               	proteins that regulate histone modifications and gene expression, but its
+PR:PROJECT_SUMMARY               	functions in the brain are unclear. In this multi-omics study, we found that
+PR:PROJECT_SUMMARY               	Zmym2 heterozygous knockout in mice leads to widespread disturbance of gene
+PR:PROJECT_SUMMARY               	expression and alterations in diverse molecular pathways, including those
+PR:PROJECT_SUMMARY               	related to histone modifications and neuronal activity, particularly in neurons.
+PR:PROJECT_SUMMARY               	Proteomic analysis of synapses uncovered dysregulation in lipid metabolism and
+PR:PROJECT_SUMMARY               	neurofilament pathways. In neurophysiologic and behavioral tests, Zmym2+/-
+PR:PROJECT_SUMMARY               	mutant mice exhibit abnormal EEG patterns and locomotor activity. Our findings
+PR:PROJECT_SUMMARY               	underscore the critical role of ZMYM2 in brain development and function and
+PR:PROJECT_SUMMARY               	establish Zmym2 mutant mice as a useful genetically valid animal model for SCZ
+PR:PROJECT_SUMMARY               	and NDD.
+PR:INSTITUTE                     	Broad Institute
+PR:LAST_NAME                     	Mashin
+PR:FIRST_NAME                    	Eivgeni
+PR:ADDRESS                       	300 Binney St., Cambridge, Massachusetts, 02142, USA
+PR:EMAIL                         	emashin@broadinstitute.org
+PR:PHONE                         	6177147061
+PR:CONTRIBUTORS                  	Wei-Chao Huang, Kira A. Perzel Mandell, Sameer Aryal, Bryan J. Song, Antia
+PR:CONTRIBUTORS                  	Valle-Tojeiro, Nathaniel Goble, Chuhan Geng, Ahmet S. Asan, Xiao-Man Liu,
+PR:CONTRIBUTORS                  	Courtney Dennis, Lucas Dailey, Amy Deik, Lucia Inunciaga, Eivgeni Mashin, Zohreh
+PR:CONTRIBUTORS                  	Farsi, Yining Wang, Jen Q. Pan, Clary B. Clish, Hasmik Keshishian, Steven A.
+PR:CONTRIBUTORS                  	Carr, Morgan Sheng
+#STUDY
+ST:STUDY_TITLE                   	Epigenetic changes, neuronal dysregulation and behavioral abnormalities in
+ST:STUDY_TITLE                   	Zmym2+/- mutant mice, a genetic animal model of schizophrenia and
+ST:STUDY_TITLE                   	neurodevelopmental disorders
+ST:STUDY_SUMMARY                 	Loss-of-function mutations in ZMYM2 are associated with an increased risk for
+ST:STUDY_SUMMARY                 	schizophrenia (SCZ) and neurodevelopmental disorders (NDD). ZMYM2 interacts with
+ST:STUDY_SUMMARY                 	proteins that regulate histone modifications and gene expression, but its
+ST:STUDY_SUMMARY                 	functions in the brain are unclear. In this multi-omics study, we found that
+ST:STUDY_SUMMARY                 	Zmym2 heterozygous knockout in mice leads to widespread disturbance of gene
+ST:STUDY_SUMMARY                 	expression and alterations in diverse molecular pathways, including those
+ST:STUDY_SUMMARY                 	related to histone modifications and neuronal activity, particularly in neurons.
+ST:STUDY_SUMMARY                 	Proteomic analysis of synapses uncovered dysregulation in lipid metabolism and
+ST:STUDY_SUMMARY                 	neurofilament pathways. In neurophysiologic and behavioral tests, Zmym2+/-
+ST:STUDY_SUMMARY                 	mutant mice exhibit abnormal EEG patterns and locomotor activity. Our findings
+ST:STUDY_SUMMARY                 	underscore the critical role of ZMYM2 in brain development and function and
+ST:STUDY_SUMMARY                 	establish Zmym2 mutant mice as a useful genetically valid animal model for SCZ
+ST:STUDY_SUMMARY                 	and NDD.
+ST:INSTITUTE                     	Broad Institute
+ST:LAST_NAME                     	Mashin
+ST:FIRST_NAME                    	Eivgeni
+ST:ADDRESS                       	300 Binney St., Cambridge, Massachusetts, 02142, USA
+ST:EMAIL                         	emashin@broadinstitute.org
+ST:PHONE                         	6177147061
+#SUBJECT
+SU:SUBJECT_TYPE                  	Mammal
+SU:SUBJECT_SPECIES               	Mus musculus
+SU:TAXONOMY_ID                   	10090
+SU:GENOTYPE_STRAIN               	Zmym2+/- mice (C57BL/6NJ-Zmym2em1(IMPC)J /Mmjax; #051239-JAX)
+SU:AGE_OR_AGE_RANGE              	1-5 Months
+SU:GENDER                        	Male and female
+SU:ANIMAL_ANIMAL_SUPPLIER        	Jackson Laboratory
+#COLLECTION
+CO:COLLECTION_SUMMARY            	The detailed procedure of brain perfusion and dissection was described
+CO:COLLECTION_SUMMARY            	previously31. In brief, mice were anesthetized with isoflurane, and transcardial
+CO:COLLECTION_SUMMARY            	perfusions were performed with ice-cold HBSS (Life Technologies) to remove blood
+CO:COLLECTION_SUMMARY            	from the brain, which was then immediately frozen in liquid nitrogen vapor and
+CO:COLLECTION_SUMMARY            	stored at –80°C. Brain dissection was carried out in a cryostat, with all
+CO:COLLECTION_SUMMARY            	tools precooled to –20°C. The cerebellum was removed first, and then the
+CO:COLLECTION_SUMMARY            	medial prefrontal cortex, dorsal hippocampus, thalamus, somatosensory cortex,
+CO:COLLECTION_SUMMARY            	and dorsal striatum, and substantia nigra, were meticulously dissected using
+CO:COLLECTION_SUMMARY            	biopsy punch and ophthalmic microscalpel in a cryostat (Leica). The brain
+CO:COLLECTION_SUMMARY            	regions were identified using the Allen Brain Atlas, with each excised tissue
+CO:COLLECTION_SUMMARY            	stored at –80°C in 1.5ml tubes.
+CO:SAMPLE_TYPE                   	Brain cortex
+#TREATMENT
+TR:TREATMENT_SUMMARY             	NO TREATMENT ADMINISTRED TO THE ANIMALS PRIOR TO SAMPLE COLLECTION
+#SAMPLEPREP
+SP:SAMPLEPREP_SUMMARY            	Brain tissues (n = 5 per genotype) were homogenized using a Qiagen TissueLyzer
+SP:SAMPLEPREP_SUMMARY            	II in water at 1:4 (w:v) (TissueLyser II; Qiagen) and the aqueous homogenate was
+SP:SAMPLEPREP_SUMMARY            	subjected to protein precipitation. Samples were prepared for each method using
+SP:SAMPLEPREP_SUMMARY            	extraction procedures that are matched for use with the chromatography
+SP:SAMPLEPREP_SUMMARY            	conditions: - HILIC-pos: Homogenates (10 μL) samples were extracted with the
+SP:SAMPLEPREP_SUMMARY            	addition of nine volumes of 74.9:24.9:0.2 v/v/v acetonitrile/methanol/formic
+SP:SAMPLEPREP_SUMMARY            	acid containing stable isotope-labeled internal standards (valine-d8, Isotec;
+SP:SAMPLEPREP_SUMMARY            	and phenylalanine-d8, Cambridge Isotope Laboratories). The samples were
+SP:SAMPLEPREP_SUMMARY            	centrifuged (10 min, 9,000g, 4°C), and the supernatants (10 μL)injected
+SP:SAMPLEPREP_SUMMARY            	directly onto column. - C8-pos: Homogenates (10 μL) were extracted using 190
+SP:SAMPLEPREP_SUMMARY            	μL isopropanol containing
+SP:SAMPLEPREP_SUMMARY            	1-dodecanoyl-2-tridecanoyl-sn-glycero-3-phosphocholine as an internal standard
+SP:SAMPLEPREP_SUMMARY            	(Avanti Polar Lipids; Alabaster, AL). After centrifugation (10 min, 9,000g,
+SP:SAMPLEPREP_SUMMARY            	ambient temperature), supernatants (2 μl) were injected directly onto column. -
+SP:SAMPLEPREP_SUMMARY            	C18-neg: Homogenates (30 μL) were extracted using 90 μl methanol containing
+SP:SAMPLEPREP_SUMMARY            	15R-15-methyl ProstaglandinA2,15R-15-methyl ProstaglandinF2α, 15S-15-methyl
+SP:SAMPLEPREP_SUMMARY            	ProstaglandinD2, 15S-15-methyl Prostaglandin E1, and 15S-15-methyl Prostaglandin
+SP:SAMPLEPREP_SUMMARY            	E2 as internal standards (Cayman Chemical Co.) and centrifuged (10 min, 9,000g,
+SP:SAMPLEPREP_SUMMARY            	4°C). The supernatants (10 μL) were injected onto column. - HILIC-neg:
+SP:SAMPLEPREP_SUMMARY            	Homogenates (30 μL) were extracted with the addition of four volumes of 80%
+SP:SAMPLEPREP_SUMMARY            	methanol containing inosine-15N4, thymine-d4 and glycocholate-d4 internal
+SP:SAMPLEPREP_SUMMARY            	standards (Cambridge Isotope Laboratories). The samples were centrifuged (10
+SP:SAMPLEPREP_SUMMARY            	min, 9,000g, 4°C) and the supernatants 10 μL) were injected directly onto
+SP:SAMPLEPREP_SUMMARY            	column.
+#CHROMATOGRAPHY
+CH:CHROMATOGRAPHY_TYPE           	HILIC
+CH:INSTRUMENT_NAME               	Shimadzu Nexera X2
+CH:COLUMN_NAME                   	Waters Atlantis HILIC Silica 2.1 x 150 mm, 3 µm
+CH:SOLVENT_A                     	100% Water, 10 mM Ammonium Formate, 0.1% Formic Acid
+CH:SOLVENT_B                     	100% acetonitrile, 0.1% Formic Acid in Acetonitrile
+CH:FLOW_GRADIENT                 	Isocratically with 5% mobile phase A for 1 minute followed by a linear gradient
+CH:FLOW_GRADIENT                 	to 40% mobile phase B over 10 minutes
+CH:FLOW_RATE                     	250 µL/min
+CH:COLUMN_TEMPERATURE            	30℃
+#ANALYSIS
+AN:ANALYSIS_TYPE                 	MS
+#MS
+MS:INSTRUMENT_NAME               	Thermo Q Exactive HF hybrid Orbitrap
+MS:INSTRUMENT_TYPE               	Orbitrap
+MS:MS_TYPE                       	ESI
+MS:ION_MODE                      	POSITIVE
+MS:MS_COMMENTS                   	Raw data were processed using TraceFinder 3.3 software (Thermo Fisher
+MS:MS_COMMENTS                   	Scientific; Waltham, MA) and Progenesis QI (Nonlinear Dynamics; Newcastle upon
+MS:MS_COMMENTS                   	Tyne, UK). Metabolite identities were confirmed using authentic reference
+MS:MS_COMMENTS                   	standards or reference samples.
+MS:MS_RESULTS_FILE               	ST003805_AN006254_Results.txt	UNITS:abundances	Has m/z:Yes	Has RT:Yes	RT units:Minutes

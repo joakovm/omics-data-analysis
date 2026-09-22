@@ -1,0 +1,145 @@
+---
+title: "EDA: De Metabolomics Workbench a SummarizedExperiment"
+subtitle: "Dataset ST003805 — Metabolomics Workbench - Huang et al., 2025"
+author: "Joaquín Villegas"
+lang: es
+format:
+  pdf:
+    toc: true
+    toc-title: "Tabla de contenidos"
+    toc-depth: 2
+    number-sections: true
+    colorlinks: true
+    geometry: margin=2.5cm
+    fontsize: 11pt
+editor: visual
+bibliography: references.bib
+---
+
+# Abstract
+
+La pérdida de función en ZMYM2 se ha asociado a un incremento en el riesgo de esquizofrenia y trastornos del neurodesarrollo. Aunque no se ha esclarecido su funcionamiento en el cerebro, se ha observado mediante estudios proteómicos, que la eliminación de ZMYM2 provoca desregulaciones metabólicas. Este trabajo se realiza con el propósito de realizar un análisis exploratorio de los datos obtenidos mediante espectrometría de masas, con el fin de observar si existen diferentes patrones en la expresión de metabolitos en ratones WT y con mutaciones de pérdida de función de ZMYM2. Mediante un análisis de componentes principales, PCA, se ha podido observar diferencias en la expresión de metabolitos. Este análisis junto con un análisis jerárquico de agrupamientos y un heatmap, método de visualización que permite observar patrones, indican que estos agrupamientos se pueden llegar a asociar a la expresión diferencial de ambos genotipos.
+
+# Objetivos
+
+Este estudio tiene como objetivo familiarizarse con la clase SummarizedExperiment y realizar un análisis exploratorio de los datos empleando análisis multivariante con R. Con este fin se ha seleccionado un dataset de metabolómica de Metabolomics Workbench, ST003805 [@Huang2025.02.18.638656] , que estudia la pérdida de función en ZMYM2 (genotipo HET) relacionada con un aumento en el riesgo de padecer esquizofrenia y trastornos del neurodesarrollo.
+
+# Métodos
+
+## Obtención de datos
+
+Los datos utilizados para el análisis exploratorio provienen de la base de datos Metabolomics Workbench que en rasgos generales contiene datos ómicos de estudios metabolómicos. El estudio que se ha seleccionado contenía varios datasets correspondientes a un análisis combinado en el que se llevaron a cabo 4 cromatografías cuyos componentes separados fueron analizados mediante espectrometría de masas. Nosotros hemos seleccionado el dataset resultado del análisis del espectrómetro de masas de la cromatografía líquida de interacción hidrofílica de ion positivo (HILIC POSITIVE ION MODE), llamada de esta forma por su forma característica de separar pequeños componentes polares [@buszewski2011].
+
+## Preprocesado y clase SummarizedExperiment
+
+Por tanto la naturaleza de nuestros datos consiste en un dataset con los valores de expresión de diferentes metabolitos. En primer lugar, se pretende trabajar con el objeto de clase SummarizedExperiment mediante el paquete SummarizedExperiment de BioConductor. La elección de usar esta clase tiene el fin de integrar y trabajar de forma estructurada tanto con los datos de expresión como con los datos correspondientes a las muestras y los metabolitos, además de permitir almacenar dentro de la clase detalles del proyecto (metadatos).
+
+Para ello, se realiza primero un preprocesado de los datos crudos que consiste en eliminar las columnas con valores faltantes y aplicar una transformación logarítmica en base 2. La razón para preprocesar los datos aplicando logaritmos es usada por su capacidad de comprimir las diferencias entre los extremos de la escala original de los datos. A su vez, se ha observado que la transformación logarítmica tiene un efecto normalizador en la distribución con asimetría positiva (@fig-comparacion_grupos) y además disminuye la desviación estándar permitiendo realizar diversos métodos de comparación al facilitar el cumplimiento de la homocedasticidad de la varianza [@Lee2020].
+
+Finalmente para generar correctamente el SummarizedExperiment, una vez descargados los metadatos del dataset del archivo mwTab, estos se organizaron en metadatos del proyecto (metadata), información asociada a las muestras (colData) e información relacionada con los metabolitos (rowData)[@SummarizedExperiment].
+
+## Análisis Exploratorio
+
+Una vez creado el objeto de clase SummarizedExperiment se procede al análisis exploratorio de los datos de expresión mediante un análisis univariante en el que se comparan la expresión de las diferentes muestras y de ambos genotipos (WT y HET). Este análisis comprueba si es necesario seguir con el preprocesado de los datos o si podemos continuar con el análisis. Finalmente, procedemos a realizar un análisis multivariante de componentes principales (PCA) el cual descompone los datos en varios componentes principales maximizando la varianza de los datos explicada en cada componente sucesivamente y nos permite observar patrones que no se pueden observar a primera vista [@rajalahti2011]. Alternativamente, este análisis es apoyado por métodos de visualización que también permiten revelar patrones como el análisis de distancias que permiten agrupar jerárquicamente los grupos y los heatmap [@gu2022].
+
+# Resultados
+
+## Creación del objeto SummarizedExperiment
+
+```{r}
+#| message: false
+#| warning: false
+#Se leen los datos crudos de la cromatografía HILIC con modo de ion positivo
+counts<-read.table("ST003805_AN006254_Results.txt", header = TRUE, sep = "\t",
+quote="", fill=TRUE, row.names = 1)
+colDatap1<-read.table("coldata.txt", header = FALSE, 
+sep = "\t", quote="", fill=TRUE)
+rowdatap1<-read.table("rowdata.txt", header = FALSE, 
+sep = "\t", quote="", fill=TRUE, comment.char = "")
+metadata<-read.table("metadata.txt", header = FALSE, 
+sep = "\t", quote="", fill=TRUE) 
+#Elimino todas las columnas que tengan valores faltantes y 
+#para reducir la escala de los valores de abundancia aplico log2
+counts_ord_noNA<-counts[rowSums(is.na(counts))==0,]
+count_log2<- log2(counts_ord_noNA + 1e-6)
+#Creo colData y rowData
+colData<-colDatap1[c(3:5)]
+colnames(rowdatap1)<-rowdatap1[3,]
+rowdatal<-rowdatap1[-c(1:3,nrow(rowdatap1)),]
+rowdata<-matrix(NA, nrow=nrow(count_log2), ncol=ncol(rowdatal))
+colnames(rowdata) <- colnames(rowdatal)
+rowdata[1:nrow(rowdatal),] <-as.matrix(rowdatal)
+#Se procede a crear el SummarizedExperiment
+library(SummarizedExperiment)
+sumex<-SummarizedExperiment(assays=list(counts= as.matrix(count_log2)), 
+colData = colData, metadata = metadata, rowData = rowdata)
+sumex
+```
+
+## Análisis estadístico univariante-Comparación de grupos
+
+Extraemos los datos del SummarizedExperiment y observamos y realizamos un boxplot para observar todas las muestras para ver si se ha realizado bien el preprocesamiento de los datos o necesitamos volverlos a preprocesar para poder compararlos
+
+```{r}
+#| label: fig-comparacion_grupos
+#| fig-cap: "Comparación de ambos genotipos"
+datosexpr<-assay(sumex)
+colnames(datosexpr)<- paste0(substr(sumex@colData@listData[["V4"]], 47, 49), 1:5)
+colnames(datosexpr)
+grupos<-substr(sumex@colData@listData[["V4"]], 47, 49)
+colores <- ifelse(grupos=="HET", "red", "green")
+boxplot(datosexpr, col=colores, main="Valores de expresión para 10 muestras",
+    ylab="Expresión", las=2)
+```
+
+Observamos que ambos grupos, tanto los del genotipo WT como los del genotipo HET, tienen los datos concentrados en el mismo rango de valores lo que nos permite comparar ambos grupos. Además observamos que tras aplicar logaritmos existe una ligera asimetría por lo que decidimos no hacer ningún preprocesado nuevo y seguimos con el análisis multivariante.
+
+## Análisis multivariante
+
+```{r}
+#| label: fig-pca
+#| fig-cap: "Análisis de Componentes Principales (PCA)"
+PCA<-prcomp(t(datosexpr), scale. = TRUE) 
+peso<- round(PCA$sdev^2/sum(PCA$sdev^2)*100,1)
+xlab<-c(paste("PC1",peso[1],"%"))
+ylab<-c(paste("PC2",peso[2],"%"))
+plot(PCA$x[,1:2],xlab=xlab,ylab=ylab, col=colores, 
+     main ="Análisis Componentes Principales")
+text(PCA$x[,1],PCA$x[,2], colnames(datosexpr),pos=4, cex=.7)
+```
+
+En el siguiente gráfico se puede observar como existe una polaridad entre ambos grupos, indicando que las muestras entre el genotipo WT son más parecidas entre sí que con las muestras cuyo genotipo es HET y viceversa. Pudiendo sugerir que existen patrones de expresión distintos.
+
+```{r}
+#| label: fig-distancias
+#| fig-cap: "Agrupación Jerárquica basada en distancias"
+clust<- hclust(dist(t(datosexpr)),method="average")
+plot(clust, hang=-1)
+```
+
+Mediante una agrupación jerárquica, los resultados apoyan la posible existencia de una agrupación asociada a una expresión diferencial de metabolitos entre el genotipo WT y HET.
+
+El estudio de las distancias puede ser complementado con un heatmap.
+
+```{r}
+#| label: fig-heatmap
+#| fig-cap: "heatmap"
+Dist <- dist(t(datosexpr))
+heatmap (as.matrix(Dist), col=heat.colors(20))
+```
+
+Se puede observar como las zonas más claras y por tanto con más diferencias son las alejadas de la diagonal y por tanto las correspondientes a las comparaciones entre ambos grupos genotípicos; mientras que las zonas más oscuras y por tanto más similares, y por ende con perfil metabólico más similar, son aquellas que se encuentran en la diagonal, donde se comparan las muestras del mismo grupo genotípico.
+
+# Discusión
+
+En este análisis exploratorio es importante destacar que hemos utilizado la clase SummarizedExperiment, en vez de la clase ExpressionSet cuyo uso está más extendido en ciertas bases de datos de expresión génica como GEOquery. La razón de esta elección se debe a la mayor libertad que ofrece SummarizedExperiment de añadir información sobre los genes (en este caso metabolitos) en forma de DataFrame accesible mediante la función rowData. Además, aunque no relevante para el estudio de metabolitos, el paquete SummarizedExperiment tiene otra clase aparte de la utilizada en este estudio, RangedSummarizedExperiment, que permite almacenar información sobre los rangos genómicos de los genes [@buszewski2011].
+
+Comprobado que podemos comparar ambos grupos tras el preprocesamiento de los datos (@fig-comparacion_grupos), procedemos con el análisis multivariante. El análisis de componentes principales es la herramienta más utilizada para comparar la composición química de muestras individuales, en este caso, para la identificación de metabolitos [@abdelhafez2019]. Como se ha comentado anteriormente, intenta explicar la máxima varianza posible en los datos, aunque en nuestros resultados los dos primeros componentes no explican una gran variabilidad de los datos, apenas el 40%, sí que se puede observar un patrón asociado a la expresión de los metabolitos en ambos grupos genotípicos (@fig-pca), cuya evidencia es apoyada por la agrupación jerárquica del análisis de distancias euclídeas (@fig-distancias) y el heatmap (@fig-heatmap). Dada la baja varianza explicada sería recomendable seguir con los siguientes componentes principales para estudiar si existen otros patrones que desconocemos.
+
+Por último destacar que el análisis de este estudio solo es un análisis exploratorio de los datos y solo nos permite discutir si hay una expresión diferencial entre ambos genotipos, para explorar en profundidad los efectos que tiene la ausencia de función de ZMYM2 tendría que realizarse un análisis más completo sobre qué metabolitos serían aquellos que tienen una mayor expresión diferencial, se podría realizar mediante un volcano-plot, y estudiar en qué ruta metabólica participa y la sobreexpresión o infraexpresión de estos metabolitos en el fenotipo de los individuos.
+
+# Conclusiones
+
+Dados los resultados de este análisis, es concluyente que existe cierto patrón en los datos y por tanto existe una expresión diferencial de los metabolitos entre los genotipos WT y aquellos que han pérdido la función del gen ZMYM2. Aunque no podemos esclarecer el funcionamiento que este gen, asociado a un incremento del riesgo de esquizofrenia y trastornos del neurodesarrollo, tiene en el cerebro, podemos afirmar que afecta al funcionamiento de la maquinaria celular de las neuronas.
+
+# Referencias
