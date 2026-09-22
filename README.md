@@ -8,7 +8,7 @@ Los dos análisis parten de datasets y preguntas biológicas distintas, pero com
 
 | Carpeta | Análisis | Dataset | Fuente | Técnicas |
 |---|---|---|---|---|
-| [`01-eda-metabolomics/`](01-eda-metabolomics) | Análisis exploratorio de datos (EDA) de metabolómica | ST003805 — metabolitos de ratones WT vs. HET (pérdida de función de ZMYM2) [Huang et al., 2025]( https://doi.org/10.1101/2025.02.18.638656) | [Metabolomics Workbench](https://www.metabolomicsworkbench.org/) | Estadística descriptiva, PCA, clustering jerárquico, heatmap |
+| [`01-eda-metabolomics/`](01-eda-metabolomics) | Análisis exploratorio de datos (EDA) de metabolómica | ST003805 — metabolitos de ratones WT vs. HET (pérdida de función de ZMYM2) ([Huang et al., 2025](https://doi.org/10.1101/2025.02.18.638656)) | [Metabolomics Workbench](https://www.metabolomicsworkbench.org/) | Estadística descriptiva, PCA, clustering jerárquico, heatmap |
 | [`02-differential-expression/`](02-differential-expression) | Análisis de expresión diferencial (RNA-seq) | GSE161731 — sangre periférica de pacientes con COVID-19, neumonía bacteriana y controles sanos ([McClain et al., 2021](https://doi.org/10.1038/s41467-021-21289-y)) | [GEO (Gene Expression Omnibus)](https://www.ncbi.nlm.nih.gov/geo/) | EDA, MDS, PCA, limma-voom, análisis de sobrerrepresentación (GO) |
 
 Cada carpeta es un análisis autocontenido, con su propio `.Rproj`, datos, informe en Quarto (`.qmd`) y PDF ya renderizado. Consulta el README de cada carpeta para el detalle de objetivos, métodos y cómo reproducirlo.
